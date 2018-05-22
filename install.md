@@ -21,11 +21,29 @@ Activate the *openalea* environment:
 
     [source] activate openalea
 
+
 Install the different packages
 
     conda install -c openalea openalea.mtg alinea.caribu notebook matplotlib pandas
 
     conda install -c openalea -c conda-forge pvlib-python alinea.astk
+
+
+### WINDOWS: Fix for MinGW and Caribu
+
+From the key, install MinGW (C:\MinGW)
+
+Add MinGW in the PATH (either in the console or on the computer (environment variables)):
+set PATH=C:\MinGW\bin;%PATH%
+
+Launch a console (cmd.exe) and activate openalea:
+    
+    activate openalea
+    
+Test if caribu is working:
+
+    canestrad -h
+
 
 ## Installation of R & co
 
