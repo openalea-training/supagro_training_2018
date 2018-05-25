@@ -17,7 +17,7 @@ Create an environment named *openalea*:
 
     conda create -n openalea -c openalea openalea.plantgl boost=1.66
 
-Activate the *openalea* environment:
+Activate the *openalea* environment (do not type 'source' on windows):
 
     [source] activate openalea
 
@@ -29,12 +29,14 @@ Install the different packages
     conda install -c openalea -c conda-forge pvlib-python alinea.astk
 
 
-### WINDOWS: Fix for MinGW and Caribu
+### Windows: fix for Caribu
 
-From the key, install MinGW (C:\MinGW)
+Unzip [this archive](./mingw_dll.zip) to C:\MinGW_dll.
 
-Add MinGW in the PATH (either in the console or on the computer (environment variables)):
-set PATH=C:\MinGW\bin;%PATH%
+Add MinGW_dll in the PATH (search for path in the command bar / choose Modifier les variables d'environnement /
+  Variables d'environnement / PATH):
+  
+..;C:\MinGW_dll
 
 Launch a console (cmd.exe) and activate openalea:
     
