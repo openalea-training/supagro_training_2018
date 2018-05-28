@@ -10,7 +10,7 @@ require(ggplot2)
 require(cowplot)
 
 ###environnement de travail
-setwd(dir='/home/perez/Documents/Enseignement/supagro_training_2018/TD_3/')
+#setwd(dir='/home/perez/Documents/Enseignement/supagro_training_2018/TD_3/')
 
 
 ####____________Etape 1: Définir une fonction_____________####
@@ -19,10 +19,10 @@ setwd(dir='/home/perez/Documents/Enseignement/supagro_training_2018/TD_3/')
 donLW=read.csv(file = 'dataLW_Maize.csv')
 
 ###identifier chaque plante
-donLW$plant_id=paste(donLW$year,donLW$genotype,donLW$Nmax,sep='_')
+donLW$plant_id=paste0('plante_',as.numeric(as.factor((paste(donLW$year,donLW$genotype,donLW$Nmax,sep='_')))))
 
 ###identifier chaque feuille
-donLW$leaf_id=paste(donLW$plant,donLW$genotype,donLW$lmax,donLW$N,sep='_')
+donLW$leaf_id=paste('leaf',donLW$N,donLW$plant_id,sep='_')
 
 ###Représenter une feuille à partir des données disponibles ####
 leaf=12
@@ -35,8 +35,8 @@ polym=function(x,w0,lm){
   a0=w0
   c0=(w0-1)/(lm**2)
   b0=-2*c0*lm
-    
-    
+
+
   c1=-1/(1-lm)**2
   b1=-2*c1*lm
   a1=-b1-c1
@@ -58,27 +58,27 @@ ggplot()+
 
 ####____________Etape 2: Calibrer les paramètres d’une fonction_____________####
 
-####Ajuster les valeurs de lm et w0 pour l’ensemble des feuilles mesurées et représenter ces ajustements#### 
+####Ajuster les valeurs de lm et w0 pour l’ensemble des feuilles mesurées et représenter ces ajustements####
 
 donFit=NULL
 pdf('Ajustement_LW.pdf')
 for (i in unique(donLW$leaf_id)){
   sub=donLW[donLW$leaf_id==i,]
-  
+
   fit=nls(data=sub,sub$w~polym(x = sub$l,w0 = w0,lm = lm),start = list(w0=0.5,lm=0.5))
   w0=as.numeric(coef(fit)['w0'])
   lm=as.numeric(coef(fit)['lm'])
-  
+
   donFit_sub=data.frame(year=unique(sub$year),genotype=unique(sub$genotype),N=unique(sub$N),Nmax=unique(sub$Nmax),lmax=unique(sub$lmax),wmax=unique(sub$wmax),leaf_id=i,w0=w0,lm=lm)
   donFit=rbind(donFit,donFit_sub)
-  
+
   graph=ggplot()+
     geom_point(data=sub,aes(x=l,y=w))+
     geom_path(aes(x=x_sim,y=polym(x = x_sim,w0=w0,lm=lm),col='red'))+
     theme_classic()+
     theme(legend.position='none')+
     ggtitle(i,paste0('w0=',round(w0,2),' lm=',round(lm,2)))
-    
+
   print(graph)
 }
 dev.off()
@@ -191,10 +191,10 @@ for (leaf in 1:length(unique(donLW$leaf_id))){
   w=sub$w
   lmax=unique(sub$lmax)
   wmax=unique(sub$wmax)
-  
+
   w0=donFit[donFit$leaf_id==unique(donLW$leaf_id)[leaf],]$w0
   lm=donFit[donFit$leaf_id==unique(donLW$leaf_id)[leaf],]$lm
-  
+
   ###estimation des surfaces par la méthode des trapèzes
   ###valeurs observées
   leaf_area_estim=function(l,lmax,wmax){
@@ -212,7 +212,7 @@ for (leaf in 1:length(unique(donLW$leaf_id))){
     w=polym(x = l,w0 = w0,lm = lm)
     W=w*wmax
     L=l*lmax
-    
+
     t=NULL
     for (i in 1:(length(W)-1)){
       t[i]=(L[i]-L[i+1])*(W[i]+W[i+1])
@@ -220,20 +220,20 @@ for (leaf in 1:length(unique(donLW$leaf_id))){
     area=sum(t)
     return(area)
   }
-  
+
   leaf_area_estim=leaf_area_estim(l=l,lmax=lmax,wmax=wmax)
   leaf_area_predict=leaf_area_predict(l=l,lmax=lmax,wmax=wmax,w0=w0,lm=lm)
-  
+
   donArea_sub=data.frame(genotype=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$genotype),plant_id=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$plant_id),leaf_id=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$leaf_id),N=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$N),leaf_area_estim=leaf_area_estim,leaf_area_predict=leaf_area_predict)
   donArea=rbind(donArea,donArea_sub)
-  
+
 }
 
 
 ggplot(data=donArea,aes(x=leaf_area_estim,y=leaf_area_predict))+
   geom_point()+
   geom_abline(slope = 1,intercept = 0)
-  
+
 model=lm(donArea$leaf_area_estim~donArea$leaf_area_predict)
 summary(model)
 
@@ -259,3 +259,4 @@ ggplot()+
   xlab('leaf rank')+
   theme_classic()+
   ggtitle(paste0('rmax=',rmax,'   skew=',skew, '   (plant leaf area=',plant_area,')'))
+
