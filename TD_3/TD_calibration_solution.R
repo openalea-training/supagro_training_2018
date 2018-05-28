@@ -44,22 +44,9 @@ polym=function(x,w0,lm){
   return(y)
 }
 
-polym_integral=function(w0,lm){
-  a0=w0
-  c0=(w0-1)/(lm**2)
-  b0=-2*c0*lm
 
 
-  c1=-1/(1-lm)**2
-  b1=-2*c1*lm
-  a1=-b1-c1
-  return(a0*lm + b0/2*lm**2 + c0/3*lm**3 + a1 + b1/2 + c1/3 - a1*lm - b1/2 * lm**2 - c1/3 * lm**3)
-}
-
-
-
-
-#### Représenter une feuille avec les valeurs ####
+#### Représenter une feuille avec les différentes valeurs des paramètres####
 w0=0.8
 lm=0.01
 x_sim=seq(from = 0,to = 1,by = 0.02)
@@ -130,17 +117,18 @@ leaf_area_estim=function(l,lmax,wmax){
     return(area)
 }
 ####valeurs prédites
-leaf_area_predict=function(l,lmax,wmax,w0,lm){
-    w=polym(x = l,w0 = w0,lm = lm)
-    W=w*wmax
-    L=l*lmax
+polym_integral=function(w0,lm,lmax,wmax){
+  a0=w0
+  c0=(w0-1)/(lm**2)
+  b0=-2*c0*lm
+  
+  c1=-1/(1-lm)**2
+  b1=-2*c1*lm
+  a1=-b1-c1
+  
+  int=a0*lm + b0/2*lm**2 + c0/3*lm**3 + a1 + b1/2 + c1/3 - a1*lm - b1/2 * lm**2 - c1/3 * lm**3
 
-    t=NULL
-    for (i in 1:(length(W)-1)){
-      t[i]=(L[i]-L[i+1])*(W[i]+W[i+1])/2
-    }
-    area=sum(t)
-    return(area)
+  return(int*wmax*lmax)
 }
 
 donArea=NULL
@@ -158,12 +146,12 @@ for (leaf in 1:length(unique(donLW$leaf_id))){
 
 
   obs = leaf_area_estim(l=l,lmax=lmax,wmax=wmax)
-  sim = leaf_area_predict(l=l,lmax=lmax,wmax=wmax,w0=w0,lm=lm)
+  sim = polym_integral(lmax=lmax,wmax=wmax,w0=w0,lm=lm)
 
   donArea_sub = data.frame(genotype=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$genotype),
-                             plant_id=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$plant_id),
-                             leaf_id=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$leaf_id),
-                             N=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$N),
+                           plant_id=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$plant_id),
+                           leaf_id=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$leaf_id),
+                           N=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$N),
                              leaf_area_estim=obs,
                              leaf_area_predict=sim)
   donArea=rbind(donArea,donArea_sub)
@@ -171,14 +159,38 @@ for (leaf in 1:length(unique(donLW$leaf_id))){
 }
 
 
+####Root mean square error
+f.rmse=function(Y_obs,Y_estim){
+  
+  nb=length(Y_obs)
+  SCR = sum((Y_estim - Y_obs)**2)
+  RMSE=sqrt(1/nb * SCR)
+  
+  return(round(RMSE,2))
+}
+
+###Bias
+f.bias=function(Y_obs,Y_estim){
+  
+  nb=length(Y_obs)
+  SCR = sum((Y_estim - Y_obs)**2)
+  biais = 1/nb * sum(Y_estim - Y_obs)
+  
+  return(round(biais,2))
+}
+
+
 ggplot(data=donArea,aes(x=leaf_area_estim,y=leaf_area_predict))+
   geom_point()+
+  ylab('Simulated leaf area (cm2)')+
+  xlab('Observed leaf area (cm2)')+
   geom_abline(slope = 1,intercept = 0)
 
 model=lm(donArea$leaf_area_estim~donArea$leaf_area_predict)
 summary(model)
 
-## TO_DO add rmse
+f.rmse(Y_obs = donArea$leaf_area_estim,Y_estim = donArea$leaf_area_predict)
+f.bias(Y_obs = donArea$leaf_area_estim,Y_estim = donArea$leaf_area_predict)
 
 
 ####____________Etape 3: Modélisation des effets ontogeniques et genetiques _____________####
