@@ -44,6 +44,21 @@ polym=function(x,w0,lm){
   return(y)
 }
 
+polym_integral=function(w0,lm){
+  a0=w0
+  c0=(w0-1)/(lm**2)
+  b0=-2*c0*lm
+
+
+  c1=-1/(1-lm)**2
+  b1=-2*c1*lm
+  a1=-b1-c1
+  return(a0*lm + b0/2*lm**2 + c0/3*lm**3 + a1 + b1/2 + c1/3 - a1*lm - b1/2 * lm**2 - c1/3 * lm**3)
+}
+
+
+
+
 #### Représenter une feuille avec les valeurs ####
 w0=0.8
 lm=0.01
@@ -97,9 +112,76 @@ model=lm(donFit$lm~donFit$w0)
 summary(model)
 ggplot(data=donFit,aes(x=lm,y=w0))+
   geom_point()+
-  geom_smooth(method='lm',se = F)
+    geom_smooth(method='lm',se = F)
 
-####____________Etape 3: Les paramètres sont-ils génétiques? _____________####
+
+####Estimer la surface de chaque feuille avec le modele et comparer avec les donnees  ####
+
+###estimation des surfaces reeles par la méthode des trapèzes
+###valeurs observées
+leaf_area_estim=function(l,lmax,wmax){
+    W=w*wmax
+    L=l*lmax
+    t=NULL
+    for (i in 1:(length(W)-1)){
+        t[i]=(L[i]-L[i+1])*(W[i]+W[i+1])/2
+    }
+    area=sum(t)
+    return(area)
+}
+####valeurs prédites
+leaf_area_predict=function(l,lmax,wmax,w0,lm){
+    w=polym(x = l,w0 = w0,lm = lm)
+    W=w*wmax
+    L=l*lmax
+
+    t=NULL
+    for (i in 1:(length(W)-1)){
+      t[i]=(L[i]-L[i+1])*(W[i]+W[i+1])/2
+    }
+    area=sum(t)
+    return(area)
+}
+
+donArea=NULL
+for (leaf in 1:length(unique(donLW$leaf_id))){
+  # leaf=1
+  sub=donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]
+  l=sub$l
+  w=sub$w
+  lmax=unique(sub$lmax)
+  wmax=unique(sub$wmax)
+
+  w0=donFit[donFit$leaf_id==unique(donLW$leaf_id)[leaf],]$w0
+  lm=donFit[donFit$leaf_id==unique(donLW$leaf_id)[leaf],]$lm
+
+
+
+  obs = leaf_area_estim(l=l,lmax=lmax,wmax=wmax)
+  sim = leaf_area_predict(l=l,lmax=lmax,wmax=wmax,w0=w0,lm=lm)
+
+  donArea_sub = data.frame(genotype=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$genotype),
+                             plant_id=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$plant_id),
+                             leaf_id=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$leaf_id),
+                             N=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$N),
+                             leaf_area_estim=obs,
+                             leaf_area_predict=sim)
+  donArea=rbind(donArea,donArea_sub)
+
+}
+
+
+ggplot(data=donArea,aes(x=leaf_area_estim,y=leaf_area_predict))+
+  geom_point()+
+  geom_abline(slope = 1,intercept = 0)
+
+model=lm(donArea$leaf_area_estim~donArea$leaf_area_predict)
+summary(model)
+
+## TO_DO add rmse
+
+
+####____________Etape 3: Modélisation des effets ontogeniques et genetiques _____________####
 
 
 ###Représenter les boxplots des valeurs de paramètres pour chaque génotype####
@@ -147,8 +229,6 @@ plot(anova_lm)
 plot(anova_w0)
 
 
-####____________Changer d’échelle et intégrer plusieurs relations allométriques_____________####
-
 ####Représenter les longeurs/largeurs de feuilles en fonction de leur rang pour chaque plante observée####
 ###subset des données pour avoir 1 lmax et 1 wmax par feuille
 donL=donLW[donLW$N>3 & donLW$w==0,]
@@ -164,7 +244,7 @@ ggplot(data=donL,aes(y=lmax,x=N,col=plant_id))+
   theme_classic()
 
 
-####Le rapport wmax/lmax est-il constant avec le rang et génétiquement dépendent?####
+### Allometrie w / l####
 donL$wl_ratio=donL$wmax/donL$lmax
 ggplot(data=donL,aes(y=wl_ratio,x=N,col=genotype,pch=plant_id))+
   geom_point()+
@@ -181,82 +261,19 @@ summary(anova_lw)
 par(mfcol=c(2,2))
 plot(anova_lw)
 
-####Estimer la surface de chaque feuille et représenter les surfaces de feuilles d’un plante en fonction du rang ####
+#### Modelisation des effets
 
-donArea=NULL
-for (leaf in 1:length(unique(donLW$leaf_id))){
-  # leaf=1
-  sub=donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]
-  l=sub$l
-  w=sub$w
-  lmax=unique(sub$lmax)
-  wmax=unique(sub$wmax)
+lm_wl=lm(data=donL,wl_ratio~N:genotype)
+lm_w0=lm(data=donFit,w0~N:genotype)
+lm_lm=lm(data=donFit,lm~N:genotype)
 
-  w0=donFit[donFit$leaf_id==unique(donLW$leaf_id)[leaf],]$w0
-  lm=donFit[donFit$leaf_id==unique(donLW$leaf_id)[leaf],]$lm
+summary(lm_wl)
 
-  ###estimation des surfaces par la méthode des trapèzes
-  ###valeurs observées
-  leaf_area_estim=function(l,lmax,wmax){
-    W=w*wmax
-    L=l*lmax
-    t=NULL
-    for (i in 1:(length(W)-1)){
-      t[i]=(L[i]-L[i+1])*(W[i]+W[i+1])
-    }
-    area=sum(t)
-    return(area)
-  }
-  ####valeurs prédites
-  leaf_area_predict=function(l,lmax,wmax,w0,lm){
-    w=polym(x = l,w0 = w0,lm = lm)
-    W=w*wmax
-    L=l*lmax
+## TODO : plot des fits
 
-    t=NULL
-    for (i in 1:(length(W)-1)){
-      t[i]=(L[i]-L[i+1])*(W[i]+W[i+1])
-    }
-    area=sum(t)
-    return(area)
-  }
+### Estimation des surfaces a partir de lmax, rank et des modele ci dessus
 
-  leaf_area_estim=leaf_area_estim(l=l,lmax=lmax,wmax=wmax)
-  leaf_area_predict=leaf_area_predict(l=l,lmax=lmax,wmax=wmax,w0=w0,lm=lm)
+##plot obs / sim
 
-  donArea_sub=data.frame(genotype=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$genotype),plant_id=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$plant_id),leaf_id=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$leaf_id),N=unique(donLW[donLW$leaf_id==unique(donLW$leaf_id)[leaf],]$N),leaf_area_estim=leaf_area_estim,leaf_area_predict=leaf_area_predict)
-  donArea=rbind(donArea,donArea_sub)
-
-}
-
-
-ggplot(data=donArea,aes(x=leaf_area_estim,y=leaf_area_predict))+
-  geom_point()+
-  geom_abline(slope = 1,intercept = 0)
-
-model=lm(donArea$leaf_area_estim~donArea$leaf_area_predict)
-summary(model)
-
-
-bell_shaped_dist=function(plant_area=1, nb_phy=15, rmax=.7, skew=0.15){
-  k = -log(skew) * rmax
-  r = seq(1/ nb_phy, 1, length.out = nb_phy)
-  relative_surface = exp(-k / rmax * (2 * (r - rmax) ** 2 + (r - rmax) ** 3))
-  leaf_area = relative_surface / sum(relative_surface) * plant_area
-  return(leaf_area)
-}
-
-plant_area=1
-nb_phy=16
-rmax=0.7
-skew=0.15
-leaf_area=bell_shaped_dist(plant_area = plant_area,nb_phy = nb_phy,rmax = rmax,skew=skew)
-
-ggplot()+
-  geom_point(aes(x=seq(1,nb_phy,1),y=leaf_area))+
-  geom_line(aes(x=seq(1,nb_phy,1),y=leaf_area))+
-  ylab('relative leaf area')+
-  xlab('leaf rank')+
-  theme_classic()+
-  ggtitle(paste0('rmax=',rmax,'   skew=',skew, '   (plant leaf area=',plant_area,')'))
-
+##
+## inversion en imposant smax et en deformant lmax
