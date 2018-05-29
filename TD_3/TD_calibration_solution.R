@@ -10,7 +10,7 @@ require(ggplot2)
 require(cowplot)
 
 ###environnement de travail
-#setwd(dir='/home/perez/Documents/Enseignement/supagro_training_2018/TD_3/')
+setwd(dir='/home/perez/Documents/Enseignement/supagro_training_2018/TD_3/')
 
 
 ####____________Etape 1: Définir une fonction_____________####
@@ -273,19 +273,187 @@ summary(anova_lw)
 par(mfcol=c(2,2))
 plot(anova_lw)
 
-#### Modelisation des effets
+#### Modelisation des effets avec le rang de feuille
+###récupération des valeurs des parametres estimés
+donL=merge(x=donL,y=donFit)
 
-lm_wl=lm(data=donL,wl_ratio~N:genotype)
+#w0
 lm_w0=lm(data=donFit,w0~N:genotype)
-lm_lm=lm(data=donFit,lm~N:genotype)
+summary(lm_w0)
 
+donL$int_w0=coef(lm_w0)['(Intercept)']
+donL$slp_w0=NA
+donL[donL$genotype=='geno11',]$slp_w0=coef(lm_w0)['N:genotypegeno11']
+donL[donL$genotype=='geno3',]$slp_w0=coef(lm_w0)['N:genotypegeno3']
+donL[donL$genotype=='geno5',]$slp_w0=coef(lm_w0)['N:genotypegeno5']
+
+#lm
+lm_lm=lm(data=donFit,lm~N:genotype)
+summary(lm_lm)
+
+donL$int_lm=coef(lm_lm)['(Intercept)']
+donL$slp_lm=NA
+donL[donL$genotype=='geno11',]$slp_lm=coef(lm_lm)['N:genotypegeno11']
+donL[donL$genotype=='geno3',]$slp_lm=coef(lm_lm)['N:genotypegeno3']
+donL[donL$genotype=='geno5',]$slp_lm=coef(lm_lm)['N:genotypegeno5']
+
+###wl
+lm_wl=lm(data=donL,wl_ratio~N:genotype)
 summary(lm_wl)
 
-## TODO : plot des fits
+donL$int_wl=coef(lm_wl)['(Intercept)']
+donL$slp_wl=NA
+donL[donL$genotype=='geno11',]$slp_wl=coef(lm_wl)['N:genotypegeno11']
+donL[donL$genotype=='geno3',]$slp_wl=coef(lm_wl)['N:genotypegeno3']
+donL[donL$genotype=='geno5',]$slp_wl=coef(lm_wl)['N:genotypegeno5']
 
-### Estimation des surfaces a partir de lmax, rank et des modele ci dessus
+###simulation des valeurs de parametres en fonction du rang
+donL$w0_sim=donL$int_w0+donL$N*donL$slp_w0
+donL$lm_sim=donL$int_lm+donL$N*donL$slp_lm
+donL$wl_sim=donL$int_wl+donL$N*donL$slp_wl
 
-##plot obs / sim
+## représentation des ajustements
+ggplot()+
+  geom_point(data=donL,aes(x=N,y=w0,col=genotype,pch=plant_id))+
+  geom_line(data=donL,aes(x=N,y=w0_sim,col=genotype))
+  
+ggplot()+
+  geom_point(data=donL,aes(x=N,y=lm,col=genotype,pch=plant_id))+
+  geom_line(data=donL,aes(x=N,y=lm_sim,col=genotype))
 
-##
-## inversion en imposant smax et en deformant lmax
+ggplot()+
+  geom_point(data=donL,aes(x=N,y=wl_ratio,col=genotype,pch=plant_id))+
+  geom_line(data=donL,aes(x=N,y=wl_sim,col=genotype))
+
+
+### Estimation des surfaces a partir de lmax et des valeurs w0, lm et wl simulées en fonction du rang
+
+donL$leaf_area_predict_bis= polym_integral(lmax=donL$lmax,wmax=donL$lmax*donL$wl_sim,w0=donL$w0_sim,lm=donL$lm_sim)
+
+###récupération des surfaces estimées
+donL=merge(donL,donArea[,c('plant_id','leaf_id','leaf_area_estim','leaf_area_predict')])
+
+##plot obs / sim et qualité des l'ajustement
+ggplot(data=donL,aes(x=leaf_area_estim,y=leaf_area_predict_bis))+
+  geom_point()+
+  ylab('Simulated leaf area (cm2)')+
+  xlab('Observed leaf area (cm2)')+
+  geom_abline(slope = 1,intercept = 0)
+
+model=lm(donL$leaf_area_estim~donL$leaf_area_predict_bis)
+summary(model)
+
+f.rmse(Y_obs = donL$leaf_area_estim,Y_estim = donL$leaf_area_predict_bis)
+f.bias(Y_obs = donL$leaf_area_estim,Y_estim = donL$leaf_area_predict_bis)
+
+
+##surface plante
+donPlante=aggregate(x=donL[,c('leaf_area_estim','leaf_area_predict_bis')],by = list(plant_id=donL$plant_id),FUN=sum)
+
+ggplot(data=donPlante,aes(x=leaf_area_estim,y=leaf_area_predict_bis))+
+  geom_point()+
+  ylab('Simulated plant area (cm2)')+
+  xlab('Observed plant area (cm2)')+
+  geom_abline(slope = 1,intercept = 0)
+
+model=lm(donPlante$leaf_area_estim~donPlante$leaf_area_predict_bis)
+summary(model)
+
+f.rmse(Y_obs = donPlante$leaf_area_estim,Y_estim = donPlante$leaf_area_predict_bis)
+f.bias(Y_obs = donPlante$leaf_area_estim,Y_estim = donPlante$leaf_area_predict_bis)
+
+
+#####Modéliser la surface d'une plante
+
+bell_shaped_dist=function(plant_area=1, nb_phy=15, rmax=.7, skew=0.15){
+  k = -log(skew) * rmax
+  r = seq(1/ nb_phy, 1, length.out = nb_phy)
+  relative_surface = exp(-k / rmax * (2 * (r - rmax) ** 2 + (r - rmax) ** 3))
+  leaf_area = relative_surface / sum(relative_surface) * plant_area
+  return(leaf_area)
+}
+
+plant_area=1
+nb_phy=16
+rmax=0.7
+skew=0.15
+leaf_area=bell_shaped_dist(plant_area = plant_area,nb_phy = nb_phy,rmax = rmax,skew=skew)
+
+ggplot()+
+  geom_point(aes(x=seq(1,nb_phy,1),y=leaf_area))+
+  geom_line(aes(x=seq(1,nb_phy,1),y=leaf_area))+
+  ylab('relative leaf area')+
+  xlab('leaf rank')+
+  theme_classic()+
+  ggtitle(paste0('rmax=',rmax,'   skew=',skew, '   (plant leaf area=',plant_area,')'))
+
+##### inversion en imposant smax et en deformant lmax
+
+###surface relative 
+polym_integral_rel=function(w0,lm){
+  a0=w0
+  c0=(w0-1)/(lm**2)
+  b0=-2*c0*lm
+  
+  c1=-1/(1-lm)**2
+  b1=-2*c1*lm
+  a1=-b1-c1
+  
+  int=a0*lm + b0/2*lm**2 + c0/3*lm**3 + a1 + b1/2 + c1/3 - a1*lm - b1/2 * lm**2 - c1/3 * lm**3
+  
+  return(int)
+}
+
+ajust_lmax=function(Smax,N,wl_int,wl_slp,w0_int,w0_slp,lm_int,lm_slp){
+  wl_sim=wl_int+N*wl_slp
+  w0_sim=w0_int+N*w0_slp
+  lm_sim=lm_int+N*lm_slp
+  lmax=sqrt(Smax/(wl_sim*polym_integral_rel(w0=w0_sim,lm = lm_sim)))
+  return(lmax)
+}
+
+
+###exemple de surfaces simulées pour chaque génotype
+Splant_sim=4000
+N_sim=seq(0,16,1)
+
+Smax_sim=bell_shaped_dist(plant_area =Splant_sim,nb_phy = 16, rmax=.7, skew=0.15 )
+#
+#geno11
+
+lmax_geno11=ajust_lmax(Smax = Smax_sim,N =N_sim,
+           wl_int = unique(donL$int_wl),
+           wl_slp=unique(donL[donL$genotype=='geno11',]$slp_wl),
+           w0_int = unique(donL$int_w0),
+           w0_slp=unique(donL[donL$genotype=='geno11',]$slp_w0),
+           lm_int = unique(donL$int_lm),
+           lm_slp=unique(donL[donL$genotype=='geno11',]$slp_lm))
+
+
+##geno3
+lmax_geno3=ajust_lmax(Smax = Smax_sim,N =N_sim,
+                       wl_int = unique(donL$int_wl),
+                       wl_slp=unique(donL[donL$genotype=='geno3',]$slp_wl),
+                       w0_int = unique(donL$int_w0),
+                       w0_slp=unique(donL[donL$genotype=='geno3',]$slp_w0),
+                       lm_int = unique(donL$int_lm),
+                       lm_slp=unique(donL[donL$genotype=='geno3',]$slp_lm))
+
+##geno5
+lmax_geno5=ajust_lmax(Smax = Smax_sim,N =N_sim,
+                      wl_int = unique(donL$int_wl),
+                      wl_slp=unique(donL[donL$genotype=='geno5',]$slp_wl),
+                      w0_int = unique(donL$int_w0),
+                      w0_slp=unique(donL[donL$genotype=='geno5',]$slp_w0),
+                      lm_int = unique(donL$int_lm),
+                      lm_slp=unique(donL[donL$genotype=='geno5',]$slp_lm))
+
+###représentatin graphique
+ggplot()+
+  geom_point(aes(x=N_sim,y = lmax_geno11),col=1)+
+  geom_point(aes(x=N_sim,y = lmax_geno5),col=2)+
+  geom_point(aes(x=N_sim,y = lmax_geno3),col=3)+
+  ylim(c(0,70))+
+  xlab('leaf rank')+
+  ylab('leaf length(cm)')
+    
