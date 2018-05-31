@@ -126,7 +126,18 @@ def blade_dimension(area=None,
                              'W_blade': width,
                              'S_blade': area})
 
+def polym_integral_rel(w0=0.5, lm=0.5):
+    a0 = w0
+    c0 = (w0 - 1) / (lm ** 2)
+    b0 = -2 * c0 * lm
 
+    c1 = -1 / (1 - lm) ** 2
+    b1 = -2 * c1 * lm
+    a1 = -b1 - c1
+
+    int = a0 * lm + b0 / 2 * lm ** 2 + c0 / 3 * lm ** 3 + a1 + b1 / 2 + c1 / 3 - a1 * lm - b1 / 2 * lm ** 2 - c1 / 3 * lm ** 3
+
+    return int
 
 
 def blade_length(area= (15, 20, 30),

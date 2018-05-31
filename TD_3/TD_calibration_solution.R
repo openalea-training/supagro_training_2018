@@ -414,8 +414,8 @@ ajust_lmax=function(Smax,N,wl_int,wl_slp,w0_int,w0_slp,lm_int,lm_slp){
 
 
 ###exemple de surfaces simulées pour chaque génotype
-Splant_sim=4000
-N_sim=seq(0,16,1)
+Splant_sim=2000
+N_sim=seq(1,16,1)
 
 Smax_sim=bell_shaped_dist(plant_area =Splant_sim,nb_phy = 16, rmax=.7, skew=0.15 )
 #
@@ -453,7 +453,6 @@ ggplot()+
   geom_point(aes(x=N_sim,y = lmax_geno11),col=1)+
   geom_point(aes(x=N_sim,y = lmax_geno5),col=2)+
   geom_point(aes(x=N_sim,y = lmax_geno3),col=3)+
-  ylim(c(0,70))+
   xlab('leaf rank')+
   ylab('leaf length(cm)')
     

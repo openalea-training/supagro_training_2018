@@ -140,7 +140,6 @@ def sr_prevot(nb_segment=10, alpha=-2.5):
     return s, r
 
 def leaf_morpho_rel(nb_segment=10, w0=0.5, lm=0.5):
-
     a0 = w0
     c0 = (w0 - 1) / (lm ** 2)
     b0 = -2 * c0 * lm
@@ -153,7 +152,7 @@ def leaf_morpho_rel(nb_segment=10, w0=0.5, lm=0.5):
 
     r1 = numpy.array(a0+b0*s[s <=lm]+c0*s[s <=lm]**2)
     r2 = numpy.array(a1+b1*s[s >lm]+c1*s[s >lm]**2)
-    r= numpy.concatenate([r1,r2])
+    r = numpy.concatenate([r1,r2])
     return s, r
 
 # def leaf_area_rel(r,w0,lm):
