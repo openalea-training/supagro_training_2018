@@ -19,19 +19,26 @@ _latitude = 43.36
 _altitude = 56
 
 def maize(plant_area=7000,
-                 plant_height=200,
-                 rmax=0.7,
-                 skew=0.01,
-                 wl=0.1,
-                 incli_base=75,
-                 incli_top=15,
-                 delta_angle_base=250,
-                 delta_angle_top=0,
-                 plant_orientation=0,
-                 phyllotactic_angle=180,
-                 phyllotactic_deviation=10,
-                 nb_leaf_segment=10,
-                 seed=1):
+          phytomer=16,
+          plant_height=200,
+          rmax=0.7,
+          skew=0.01,
+          wl_int=0.08,
+          wl_slp=0.003,
+          w0_int=0.5,
+          w0_slp=0.01,
+          lm_int=0.5,
+          lm_slp=-0.02,
+          incli_base=75,
+          incli_top=15,
+          infl=30,
+          pos_l=0.6,
+          plant_orientation=0,
+          phyllotactic_angle=180,
+          phyllotactic_deviation=10,
+          nb_leaf_segment=10,
+          seed=1,
+          stage=None):
     """
     generate parameters of a maize plant
 
@@ -43,34 +50,56 @@ def maize(plant_area=7000,
         wl: width / length ratio
         incli_base: inclination angle at thae base of the plant (deg).
         angle at the top is set to 10
-        delta_angle_base: difference of inclination between leaf collar and
-         leaf tip for the base leaf.  No dfference at the top
+        infl: inflexion point of the logistic relation between insertion angle and leaf tip angle
+        pos_l: relative position on the midrib where the rigidity decrease
         plant_orientation: azimuth (deg, positive clockwise from X+) of the first leaf
         phyllotactic_angle: phyllotactic angle between successive leaves (deg)
-        phyllotactic_deviation: deviation amplitude fromphyllotactic angle
+        phyllotactic_deviation: deviation amplitude from phyllotactic angle
         seed: the seed of the random number generator
 
     Returns:
 
     """
 
-    phytomer = 16
+    # phytomer = 16
+    phytomer = phytomer
     ranks = range(1, phytomer + 1)
     dinc = float(incli_top - incli_base) / (phytomer - 1)
     incli = [incli_base + i * dinc for i in range(phytomer)]
-    ddel = float(delta_angle_top - delta_angle_base) / (phytomer - 1)
-    delta_angle = [delta_angle_base + i * ddel for i in range(phytomer)]
+    # ddel = float(delta_angle_top - delta_angle_base) / (phytomer - 1)
+    # delta_angle = [delta_angle_base + i * ddel for i in range(phytomer)]
     leaves = {
-    rank: parametric_leaf(nb_segment=nb_leaf_segment, insertion_angle=inc,
-                          delta_angle=delta)
-    for rank, inc, delta in zip(ranks, incli, delta_angle)}
+    # rank: parametric_leaf(nb_segment=nb_leaf_segment, insertion_angle=inc,
+    #                       delta_angle=delta)
+    # for rank, inc, delta in zip(ranks, incli, delta_angle)}
+    rank: parametric_leaf(nb_segment=nb_leaf_segment, insertion_angle=inc, infl=infl, pos_l=pos_l, w0=w0_int + rank * w0_slp,
+                          lm=lm_int + rank * lm_slp)
+    for rank, inc in zip(ranks, incli)}
 
-    return simple_maize(plant_area=plant_area, plant_height=plant_height,
-                        rmax=rmax, leaves=leaves,
-                        phyllotactic_angle=phyllotactic_angle,
-                        phyllotactic_deviation=phyllotactic_deviation,
-                        plant_orientation=plant_orientation, wl=wl, skew=skew,
-                        seed=seed)
+    # return simple_maize_raph(plant_area=plant_area, phytomer=phytomer, plant_height=plant_height,
+    #                          rmax=rmax, leaves=leaves,
+    #                          phyllotactic_angle=phyllotactic_angle,
+    #                          phyllotactic_deviation=phyllotactic_deviation,
+    #                          plant_orientation=plant_orientation, wl=wl, skew=skew,
+    #                          seed=seed, stage=stage)
+
+    return simple_maize(plant_area=plant_area, phytomer=phytomer, plant_height=plant_height,
+                             rmax=rmax, leaves=leaves,
+                             phyllotactic_angle=phyllotactic_angle,
+                             phyllotactic_deviation=phyllotactic_deviation,
+                             plant_orientation=plant_orientation,
+                             wl_int=wl_int,
+                             wl_slp=wl_slp,
+                             w0_int=w0_int,
+                             w0_slp=w0_slp,
+                             lm_int=lm_int,
+                             lm_slp=lm_slp,
+                             skew=skew,
+                             seed=seed, stage=stage)
+
+def reader(data_file='rayostpierre2002.csv'):
+    """ reader for mango meteo files """
+
 
 
 def generate_mtg(**kwds):
@@ -244,6 +273,6 @@ if __name__ == '__main__':
     # exp='ZA16'
     if len(sys.argv) > 1:
         # modulor config
-        _, input, output, isolated, nbproc = sys.argv
+        _, input, output, isolated, nbproc , density = sys.argv
         nbproc = int(nbproc)
-        process(path_input=input, path_output=output, nb_process=nbproc, isolated=eval(isolated))
+        process(path_input=input, path_output=output, nb_process=nbproc, isolated=eval(isolated), density=density)
