@@ -133,7 +133,7 @@ def illuminate(g, isolated=True, density=9, clear_sky=False, daydate=_daydate, l
         light = light_sources(*sky_sources())
     else:
         sun, sky = sun_sky_sources(daydate=daydate, longitude=longitude, latitude=latitude, altitude=altitude,
-                                   timezone=timezone)
+                                   timezone=timezone, normalisation=1)
         light = light_sources(*sun) + light_sources(*sky)
     inter_row = 80
     inter_plant = 1. / density / (inter_row / 100.) * 100
