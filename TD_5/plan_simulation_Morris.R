@@ -95,6 +95,13 @@ etude.morris=morris(model=NULL,factors=as.character(nFact),r=r,design=list(type=
 planMorris=etude.morris$X
 
 
+###visualisation of the distribution of sampling values per parameter
+plan=as.data.frame(planMorris)
+colnames(plan)
+
+hist(plan$incli_top)
+
+plot(plan[,1:4],pch=19,col=alpha(c='red',alpha=0.1))
 
 #####____________________________Groupe1______________________________________####
 group='groupe1'
@@ -188,5 +195,4 @@ for (plant_area in c(4000,10000)){
     write.csv(x=plan,file =paste0(Directory,filename,'.csv'),row.names = F)
   }
 }
-
 

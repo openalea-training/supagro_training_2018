@@ -31,6 +31,12 @@ g=generate_mtg(plant_area=8000,
                stage=None,
                seed=1)
 
+# display(g,light=True, isolated=True, density=9, clear_sky=False, daydate='2000-06-21', longitude=3.52, latitude=43.36,
+#             altitude=56, timezone="Europe/Paris")
+
+plant_irradiance(g, isolated=False, density=6, clear_sky=True, daydate='2000-06-21', longitude=3.52, latitude=0,
+altitude=56, timezone="Europe/Paris")
+
 plant_irradiance(g)
 # display(g,light=False,isolated=True)
 

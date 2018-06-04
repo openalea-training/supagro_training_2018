@@ -273,6 +273,6 @@ if __name__ == '__main__':
     # exp='ZA16'
     if len(sys.argv) > 1:
         # modulor config
-        _, input, output, isolated, nbproc , density = sys.argv
+        _, input, output, isolated, nbproc , density, latitude, daydate = sys.argv
         nbproc = int(nbproc)
-        process(path_input=input, path_output=output, nb_process=nbproc, isolated=eval(isolated), density=density)
+        process(path_input=input, path_output=output, nb_process=nbproc, isolated=eval(isolated), density=density, latitude=latitude, daydate=daydate)
