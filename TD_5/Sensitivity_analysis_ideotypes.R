@@ -124,7 +124,7 @@ for (i in outputs){
   sub=read.csv(paste0(Directory,'outputs/',i))
   
   ###add the simu index
-  sub$simu=paste0('p',sprintf("%03d", as.numeric(rownames(sub))))
+  sub$simu=paste0('p',sprintf("%03d", as.numeric(rownames(sub)-1)))
   
   ###estimate LAI & rie
   sub$LAI=sub$Area*sub$density
