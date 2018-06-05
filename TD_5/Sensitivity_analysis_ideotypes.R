@@ -124,7 +124,7 @@ for (i in outputs){
   sub=read.csv(paste0(Directory,'outputs/',i))
   
   ###add the simu index
-  sub$simu=paste0('p',sprintf("%03d", as.numeric(rownames(sub)-1)))
+  sub$simu=paste0('p',sprintf("%03d", as.numeric(rownames(sub))-1))
   
   ###estimate LAI & rie
   sub$LAI=sub$Area*sub$density
@@ -296,7 +296,7 @@ legend(title='density (plt.m-2)',legend=c('4','9','13'),col=c('yellow','orange',
 ####______________________________________________________________________________####
 ####----------------------------IDEOTYPES VISUALISATION--------------------------------####
 ####______________________________________________________________________________####
-###slect var
+###select var
 var='RIE'
 
 ###select environement
@@ -307,3 +307,110 @@ density=13
 don[don$latitude==latitude & don$density==density & don$plant_area==plant_area & don[don$latitude==latitude & don$density==density & don$plant_area==plant_area,var]==max(don[don$latitude==latitude & don$density==density & don$plant_area==plant_area,var]),c('simu',parameters,var)]
 
 
+
+####______________________________________________________________________________####
+####----------------------------WITH DYNAMIC DATA--------------------------------####
+####______________________________________________________________________________####
+####____________________________load and merge the data______________________________________####
+####group
+group='groupe1'
+
+####list of output files per group in the folder 
+outputs_stade=list.files(path = paste0(Directory,'outputs_stade'),pattern =group)
+
+###loop to load and estimate sensitivity indices
+
+###dataframe initialization
+
+###dataframe of outputs
+donRaw=NULL
+donCumul=NULL
+
+###dataframe of sensitivity indices
+dinS=NULL
+
+
+###loops on output files
+for (i in outputs_stade){
+  ###loop on output variables
+  sub=read.csv(paste0(Directory,'outputs_stade/',i))
+  
+  ###add the simu index
+  
+  sub$simu=rep(x = paste0('p',sprintf("%03d", as.numeric(rownames(sub[1:(nrow(sub)/length(unique(sub$stage))),]))-1)),times=length(unique(sub$stage)))
+  
+  ###estimate LAI & rie
+  sub$LAI=sub$Area*sub$density
+  sub$RIE=sub$LAI*sub$Ei
+  
+  ###estimate light intercepted (relatively to incident radiation)
+  sub$I=sub$Ei_leaf*sub$Area_leaf
+  
+  donRaw=rbind(donRaw,sub)
+  
+  ###estimate cumulated light interception over plant development
+  cumul=aggregate(x=sub[,c('I')],by = list(simu=sub$simu,plant_area=sub$plant_area,density=sub$density,latitude=sub$latitude),FUN=sum)
+  colnames(cumul)[colnames(cumul)=='x']='I_cumul'
+  
+  ###merge the data
+  donCumul=rbind(donCumul,cumul)
+  
+  ###merge morris plan with output to estimate indices
+  out=tell(etude.morris,y= cumul[,'I_cumul'])
+  # print(etude.morris)
+  
+  res=data.frame(t(out$ee))
+  
+  din_out=data.frame(var='I_cumul',parameter=parameters,latitude=unique(sub$latitude),density=unique(sub$density),plant_area=unique(sub$plant_area),mu=apply(X=res,MARGIN = 1,mean),mu_star=apply(X=abs(res),MARGIN = 1,mean),sd=apply(X=res,MARGIN = 1,sd),row.names = NULL)
+  
+  ####merge the data
+  dinS=rbind(dinS,din_out)
+}
+
+####create factors for visualisation
+dinS$f_latitude=paste0('lat = ',sprintf("%02d",dinS$latitude),' °')
+dinS$f_area=paste0('area = ',round(dinS$plant_area/10000,2),' m2')
+dinS$f_density=paste0('density = ',sprintf("%02d",dinS$density),' plt.m-2')
+
+####morris plot
+var='I_cumul'
+latitude=c(0)
+plant_area=c(6000)
+density=c(8)
+
+ggplot(data=dinS[dinS$var==var &  dinS$density==density & dinS$latitude==latitude & dinS$plant_area==plant_area,],aes(x=mu_star,y=sd,label=parameter))+
+  geom_point()+
+  geom_label_repel()+
+  xlab(expression(mu^'*'))+
+  ylab(expression(sigma))+
+  facet_grid(f_density~f_latitude)+
+  ggtitle(paste0('Morris indices for ', var)) 
+
+
+####evolution of inteception
+donRaw$f_latitude=paste0('lat = ',sprintf("%02d",donRaw$latitude),' °')
+donRaw$f_area=paste0('area = ',round(donRaw$plant_area/10000,2),' m2')
+donRaw$f_density=paste0('density = ',sprintf("%02d",donRaw$density),' plt.m-2')
+
+ggplot(data=donRaw,aes(x=LAI,y=RIE,group=simu))+
+  geom_line(col=alpha(colour = 1,alpha=0.5))+
+  xlab('LAI')+
+  ylab('RIE')+
+  facet_grid(f_density~f_latitude)
+
+
+###difference in parameter values between best and worst architecture####
+##à compléter si besoin
+
+###difference in parameter values between environments for the best architectures####
+##à compléter si besoin
+
+
+###ideotype
+
+###select environement
+latitude=0
+plant_area=6000
+density=8
+
+donCumul[donCumul$latitude==latitude & donCumul$density==density & donCumul$plant_area==plant_area & donCumul[donCumul$latitude==latitude & donCumul$density==density & donCumul$plant_area==plant_area,'I_cumul']==max(donCumul[donCumul$latitude==latitude & donCumul$density==density & donCumul$plant_area==plant_area,'I_cumul']),c('simu','I_cumul')]

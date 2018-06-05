@@ -109,7 +109,7 @@ group='groupe1'
 ###fixed parameters
 
 ###developemental stage (number of leaves)
-stages=c(16)
+stages=c(4,8,12)
 
 ####date
 daydate='1997-07-09'
@@ -127,7 +127,7 @@ density=8
 for (latitude in c(0,15,30,45,60)){
   
   ###save the file
-  filename=paste0('planMorris_',group,'_area',plant_area,'_d',density,'_lat',latitude)
+  filename=paste0('planMorris_',group,'_area',plant_area,'_d',density,'_lat',latitude,'_stade')
   plan=data.frame(as.data.frame(planMorris),plant_area=rep(plant_area,length(stages)*nrow(planMorris)),stage=rep(stages,each=nrow(planMorris)))
   
   write.csv(x=plan,file =paste0(Directory,filename,'.csv'),row.names = F)
@@ -141,7 +141,7 @@ group='groupe2'
 ###fixed parameters
 
 ###developemental stage (number of leaves)
-stages=c(16)
+stages=c(4,8,12)
 
 ####date
 daydate='2018-06-01'
@@ -160,7 +160,7 @@ for (density in c(4,9,13)){
   for (latitude in c(0,45)){
     
     ###save the file
-    filename=paste0('planMorris_',group,'_area',plant_area,'_d',density,'_lat',latitude)
+    filename=paste0('planMorris_',group,'_area',plant_area,'_d',density,'_lat',latitude,'_stade')
     plan=data.frame(as.data.frame(planMorris),plant_area=rep(plant_area,length(stages)*nrow(planMorris)),stage=rep(stages,each=nrow(planMorris)))
     
     write.csv(x=plan,file =paste0(Directory,filename,'.csv'),row.names = F)
@@ -173,7 +173,7 @@ group='groupe3'
 ###fixed parameters
 
 ###developemental stage (number of leaves)
-stages=c(16)
+stages=c(4,8,12)
 
 ####date
 daydate='1975-07-18'
@@ -189,7 +189,7 @@ for (plant_area in c(4000,10000)){
   for (density in c(3,7,10)){
     
     ###save the file
-    filename=paste0('planMorris_',group,'_area',plant_area,'_d',density,'_lat',latitude)
+    filename=paste0('planMorris_',group,'_area',plant_area,'_d',density,'_lat',latitude,'_stade')
     plan=data.frame(as.data.frame(planMorris),plant_area=rep(plant_area,length(stages)*nrow(planMorris)),stage=rep(stages,each=nrow(planMorris)))
     
     write.csv(x=plan,file =paste0(Directory,filename,'.csv'),row.names = F)
