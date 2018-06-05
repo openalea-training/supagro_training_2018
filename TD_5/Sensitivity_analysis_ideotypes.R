@@ -94,6 +94,111 @@ etude.morris=morris(model=NULL,factors=as.character(nFact),r=r,design=list(type=
 ###----save the design----####
 planMorris=etude.morris$X
 
+###visualisation of the distribution of sampling values per parameter
+plan=as.data.frame(planMorris)
+colnames(plan)
+
+hist(plan$incli_top)
+
+plot(plan[,1:4],pch=19,col=alpha(c='red',alpha=0.1))
+
+
+####______________________________________________________________________________####
+####----------------------------EXPERIMENTAL DESIGN --------------------------------####
+####______________________________________________________________________________####
+
+#####____________________________Groupe1______________________________________####
+group='groupe1'
+
+###fixed parameters
+
+###developemental stage (number of leaves)
+stages=c(4,8,12)
+
+####date
+daydate='1997-07-09'
+
+###final plant area (cm2) (=16 leaves)
+plant_area=6000
+
+###density
+density=8
+
+###variable parameters
+
+####latitude
+
+for (latitude in c(0,15,30,45,60)){
+  
+  ###save the file
+  filename=paste0('planMorris_',group,'_area',plant_area,'_d',density,'_lat',latitude,'_stade')
+  plan=data.frame(as.data.frame(planMorris),plant_area=rep(plant_area,length(stages)*nrow(planMorris)),stage=rep(stages,each=nrow(planMorris)))
+  
+  write.csv(x=plan,file =paste0(Directory,filename,'.csv'),row.names = F)
+  
+}
+
+
+#####____________________________Groupe2______________________________________####
+group='groupe2'
+
+###fixed parameters
+
+###developemental stage (number of leaves)
+stages=c(4,8,12)
+
+####date
+daydate='2018-06-01'
+
+###final plant area (cm2) (=16 leaves)
+plant_area=8000
+
+###density
+for (density in c(4,9,13)){
+  
+  
+  ###variable parameters
+  
+  ####latitude
+  
+  for (latitude in c(0,45)){
+    
+    ###save the file
+    filename=paste0('planMorris_',group,'_area',plant_area,'_d',density,'_lat',latitude,'_stade')
+    plan=data.frame(as.data.frame(planMorris),plant_area=rep(plant_area,length(stages)*nrow(planMorris)),stage=rep(stages,each=nrow(planMorris)))
+    
+    write.csv(x=plan,file =paste0(Directory,filename,'.csv'),row.names = F)
+  }
+}
+
+#####____________________________Groupe3______________________________________####
+group='groupe3'
+
+###fixed parameters
+
+###developemental stage (number of leaves)
+stages=c(4,8,12)
+
+####date
+daydate='1975-07-18'
+
+###latitude 
+latitude=43
+
+###variable parameters
+
+###final plant area (cm2) (=16 leaves)
+for (plant_area in c(4000,10000)){
+  ###density
+  for (density in c(3,7,10)){
+    
+    ###save the file
+    filename=paste0('planMorris_',group,'_area',plant_area,'_d',density,'_lat',latitude,'_stade')
+    plan=data.frame(as.data.frame(planMorris),plant_area=rep(plant_area,length(stages)*nrow(planMorris)),stage=rep(stages,each=nrow(planMorris)))
+    
+    write.csv(x=plan,file =paste0(Directory,filename,'.csv'),row.names = F)
+  }
+}
 
 ####______________________________________________________________________________####
 ####----------------------------SENSITIVITY ANALYSIS--------------------------------####
