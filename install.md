@@ -24,9 +24,9 @@ Activate the *openalea* environment (do not type 'source' on windows):
 
 Install the different packages
 
-    conda install -c openalea openalea.mtg alinea.caribu notebook matplotlib pandas
+    conda install -c openalea openalea.mtg alinea.caribu notebook matplotlib pandas scipy
 
-    conda install -c openalea -c conda-forge pvlib-python alinea.astk
+    conda install -c openalea -c conda-forge pvlib-python pytables alinea.astk
 
 
 ### Windows: fix for Caribu
