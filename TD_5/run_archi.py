@@ -2,7 +2,7 @@ from simple_maize import *
 from matplotlib.pylab import plot, show, xlim, ylim, axes
 import numpy
 
-from TD_maize import maize,display,generate_mtg, illuminate,plant_irradiance, process
+from TD_maize import maize,display,generate_mtg, illuminate,plant_irradiance, process, leaf_irradiance
 
 # %pylab inline
 # pylab.rcParams['figure.figsize'] = (5, 5)
@@ -41,7 +41,7 @@ plant_irradiance(g)
 # display(g,light=False,isolated=True)
 
 
-# t=leaf_irradiance(g, isolated=False, illuminated=None)
+# t=leaf_irradiance(g)
 # display(g,light=True,isolated=False)
 
 

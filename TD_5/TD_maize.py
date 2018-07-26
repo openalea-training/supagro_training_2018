@@ -194,6 +194,17 @@ def plant_irradiance(g, illumination=None, **kwds):
             'Area_leaf': plant_leaf_area,
             'Ei_leaf': (dfl.Ei * dfl.area).sum() / plant_leaf_area}
 
+def leaf_irradiance(g, illumination=None, **kwds):
+    if illumination is None:
+        _, _, agg = illuminate(g, **kwds)
+    else:
+        _, _, agg = illumination
+    df = pandas.DataFrame(agg)
+    leaves = [k for k, v in g.property('label').iteritems() if v.startswith('Leaf')]
+    dfl = df.loc[leaves,]
+    return {'Area_leaf': dfl.area,
+            'Ei_leaf': dfl.Ei}
+
 
 def display_res(row, light=False):
     g_pars = ['plant_area', 'phytomer', 'seed', 'plant_height', 'rmax', 'skew', 'wl_slp', 'w0_slp', 'lm_slp',
